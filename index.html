@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora de gastos hormiga · #ElPoquitoSíCuenta</title>
+<meta name="description" content="Anota tus antojos (el tinto, la empanada, el domicilio) y mira cuánto suman al mes y al año. #ElPoquitoSíCuenta">
+<meta property="og:title" content="¿Cuánto te cuestan tus gastos hormiga?">
+<meta property="og:description" content="Anota tus antojos (el tinto, la empanada, el domicilio) y mira cuánto suman al mes y al año. #ElPoquitoSíCuenta">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FFD23F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%9C%3C/text%3E%3C/svg%3E">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: brand header on the campaign yellow, then "Tus antojos" (inputs) beside a printed receipt that totals them; one column on phones.
+   Single deliberate look (campaign yellow + ink), so every color is set explicitly and the page reads the same on any host theme. */
+:root{
+  --yellow:#FFD23F;
+  --yellow-deep:#F2B900;
+  --ink:#17140F;
+  --red:#D93A22;
+  --green:#0F7A3B;
+  --paper:#FFFDF7;
+  --white:#FFFFFF;
+  --muted:#5E584E;
+  --line:#DDD5C3;
+  --font-display:"Archivo Black","Arial Black",Impact,sans-serif;
+  --font-body:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"Space Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{background:var(--yellow);color:var(--ink)}
+body{font-family:var(--font-body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+.wrap{max-width:1120px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+
+/* header */
+.top{display:flex;flex-direction:column;gap:14px;max-width:760px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-weight:700;font-size:14px;letter-spacing:.02em}
+.brand svg{width:46px;height:auto;flex:none}
+h1{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,6vw,60px);line-height:1.02;letter-spacing:-.01em;margin:0;text-wrap:balance}
+h1 .hl{background:var(--ink);color:var(--yellow);padding:0 .14em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.lede{margin:0;font-size:18px;max-width:58ch}
+
+/* main grid */
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:28px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.panel,.card{background:var(--white);border:2px solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink)}
+.panel{padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0;container-type:inline-size}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h2,h3{font-family:var(--font-display);font-weight:400;margin:0;line-height:1.1}
+h2{font-size:24px}
+h3{font-size:19px}
+.badge{font-family:var(--font-mono);font-size:12px;font-weight:700;background:var(--yellow);border:2px solid var(--ink);border-radius:999px;padding:3px 10px;transform:rotate(-2deg)}
+
+/* rows */
+.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:end;padding:12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper)}
+.row .name{grid-column:1 / -1}
+.row .sub{grid-column:1 / 3}
+.row .del{justify-self:end;grid-column:3}
+@container (min-width:600px){
+  .row{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 64px 96px 104px 36px}
+  .row .name,.row .sub,.row .del{grid-column:auto}
+}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f label,.sub-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.f input,.f select{width:100%;min-width:0;height:42px;border:2px solid var(--ink);border-radius:8px;background:var(--white);padding:0 10px;font-size:16px}
+.f select{padding-right:4px}
+.money{position:relative}
+.money span{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;pointer-events:none}
+.money input{padding-left:22px;font-variant-numeric:tabular-nums}
+.sub{align-self:stretch;justify-content:flex-end;padding-bottom:2px}
+.sub-val{font-family:var(--font-mono);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.del{height:42px;width:36px;border:2px solid var(--ink);border-radius:8px;background:var(--white);font-size:20px;line-height:1;cursor:pointer}
+.del:hover{background:var(--red);color:var(--white)}
+
+.add{display:flex;flex-direction:column;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border:2px solid var(--ink);border-radius:999px;background:var(--yellow);font-weight:700;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .08s ease, box-shadow .08s ease}
+.btn:hover{background:var(--yellow-deep)}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn-ink{background:var(--ink);color:var(--yellow)}
+.btn-ink:hover{background:#2c271f}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:34px;padding:0 12px;border:1.5px solid var(--ink);border-radius:999px;background:var(--white);font-size:14px;cursor:pointer}
+.chip:hover{background:var(--yellow)}
+.hint{margin:0;font-size:14px;color:var(--muted)}
+
+/* receipt */
+.side{display:flex;flex-direction:column;gap:22px;position:sticky;top:16px;min-width:0}
+@media (max-width:860px){.side{position:static}}
+.receipt-wrap{filter:drop-shadow(5px 5px 0 var(--ink));position:relative}
+.receipt{--z:9px;background:var(--paper);padding:22px 22px calc(26px + var(--z));font-family:var(--font-mono);font-size:14px;
+  -webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / calc(2*var(--z)) 100%;
+          mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50% / calc(2*var(--z)) 100%}
+.receipt-ant{position:absolute;right:-6px;top:-46px;width:92px;transform:rotate(8deg);filter:none}
+.r-head{text-align:center;display:flex;flex-direction:column;gap:2px;padding-bottom:12px;border-bottom:2px dashed var(--ink)}
+.r-title{font-weight:700;font-size:15px;letter-spacing:.06em}
+.r-meta{font-size:12px;color:var(--muted)}
+.r-cols{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding-top:10px;letter-spacing:.04em}
+.r-lines{list-style:none;margin:6px 0 0;padding:0 0 12px;display:flex;flex-direction:column;gap:6px;border-bottom:2px dashed var(--ink)}
+.r-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:baseline}
+.r-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-qty{color:var(--muted);font-size:12px}
+.r-amt{font-variant-numeric:tabular-nums;font-weight:700}
+.r-empty{color:var(--muted);text-align:center;padding:10px 0}
+.r-tot{display:flex;flex-direction:column;gap:4px;padding-top:12px}
+.r-row{display:flex;justify-content:space-between;gap:10px;font-variant-numeric:tabular-nums}
+.r-big{margin-top:8px;padding:12px 12px 10px;background:var(--ink);color:var(--yellow);display:flex;flex-direction:column;gap:2px}
+.r-big span{font-size:12px;letter-spacing:.08em}
+.r-big strong{font-family:var(--font-display);font-weight:400;font-size:clamp(34px,5vw,46px);line-height:1;letter-spacing:-.01em;font-variant-numeric:tabular-nums;transform-origin:left center}
+.r-big strong.bump{animation:bump .32s ease}
+@keyframes bump{40%{transform:scale(1.05)}}
+.r-foot{margin:14px 0 0;text-align:center;font-weight:700;line-height:1.35}
+.r-foot em{font-style:normal;color:var(--red)}
+
+.card{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.save label{font-size:15px}
+.save output{font-weight:700}
+input[type=range]{width:100%;accent-color:var(--ink);height:28px}
+.big-line{margin:0;font-size:17px}
+.big-line strong{font-family:var(--font-display);font-weight:400;font-size:24px;color:var(--green);white-space:nowrap}
+.goal{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px}
+.goal .f input{height:40px}
+.goal-out{margin:0;padding:10px 12px;background:var(--yellow);border:2px solid var(--ink);border-radius:10px;font-weight:500}
+.goal-out strong{font-weight:700}
+.share-text{margin:0;padding:12px;border:1.5px dashed var(--ink);border-radius:10px;background:var(--paper);font-weight:500}
+.share-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.status{font-size:14px;font-weight:700;color:var(--green)}
+
+/* footer */
+.foot{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;border-top:2px solid var(--ink);padding-top:18px}
+@media (max-width:620px){.foot{grid-template-columns:minmax(0,1fr)}}
+.reto{margin:0;font-size:17px;max-width:62ch}
+.reto strong{font-family:var(--font-display);font-weight:400}
+.fine{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.link-btn{background:none;border:0;padding:0;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+
+@media (prefers-reduced-motion:reduce){.r-big strong.bump{animation:none}.btn{transition:none}}
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ant" viewBox="0 0 230 200">
+    <g stroke="#17140F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M96 132 L80 160 L66 180"/>
+      <path d="M108 134 L108 164 L100 184"/>
+      <path d="M120 130 L142 156 L158 172"/>
+    </g>
+    <g stroke="#17140F" stroke-width="7" stroke-linejoin="round">
+      <ellipse cx="60" cy="134" rx="42" ry="32" fill="#E5402A" transform="rotate(-10 60 134)"/>
+      <ellipse cx="108" cy="122" rx="20" ry="16" fill="#E5402A"/>
+      <circle cx="152" cy="104" r="29" fill="#E5402A"/>
+    </g>
+    <g stroke="#17140F" stroke-width="7" stroke-linecap="round" fill="none">
+      <path d="M144 78 C140 60 132 50 120 44"/>
+      <path d="M160 79 C166 60 176 52 190 50"/>
+    </g>
+    <circle cx="118" cy="43" r="7" fill="#17140F"/>
+    <circle cx="192" cy="50" r="7" fill="#17140F"/>
+    <circle cx="78" cy="78" r="36" fill="#FFD23F" stroke="#17140F" stroke-width="7"/>
+    <circle cx="78" cy="78" r="25" fill="none" stroke="#17140F" stroke-width="3" stroke-dasharray="4 5"/>
+    <text x="78" y="93" text-anchor="middle" font-family="Archivo Black, Arial Black, sans-serif" font-size="42" fill="#17140F">$</text>
+    <path d="M122 114 L118 88 L106 72" stroke="#17140F" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="161" cy="98" r="10" fill="#FFFFFF" stroke="#17140F" stroke-width="4"/>
+    <circle cx="164" cy="97" r="4.5" fill="#17140F"/>
+    <circle cx="144" cy="114" r="5.5" fill="#FF9B85"/>
+    <path d="M157 117 C162 123 170 122 174 114" stroke="#17140F" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><svg viewBox="0 0 230 200" aria-hidden="true"><use href="#ant"/></svg><span>#ElPoquitoSíCuenta</span></div>
+    <h1>¿Cuánto te cuestan tus <span class="hl">gastos hormiga</span>?</h1>
+    <p class="lede">Anota los gastos pequeños que se te repiten: el tinto, la empanada, el domicilio. Aquí ves cuánto suman al mes y al año.</p>
+  </header>
+
+  <main class="grid">
+    <section class="panel" aria-labelledby="antojos-h">
+      <div class="panel-head">
+        <h2 id="antojos-h">Tus antojos</h2>
+        <span class="badge" id="example-badge">Ejemplo: cámbialo por lo tuyo</span>
+      </div>
+      <ol class="rows" id="rows"></ol>
+      <div class="add">
+        <div><button type="button" class="btn" id="add-row">+ Agregar gasto</button></div>
+        <p class="hint">O agrega uno común:</p>
+        <div class="chips" id="chips" role="group" aria-label="Agregar un gasto común"></div>
+      </div>
+    </section>
+
+    <aside class="side" aria-labelledby="tirilla-h">
+      <div class="receipt-wrap">
+        <div class="receipt" id="receipt">
+          <div class="r-head">
+            <span class="r-title" id="tirilla-h">TIRILLA DE GASTOS HORMIGA</span>
+            <span class="r-meta" id="r-date"></span>
+            <span class="r-meta">Caja: tu billetera</span>
+          </div>
+          <div class="r-cols"><span>GASTO</span><span>AL MES</span></div>
+          <ul class="r-lines" id="r-lines"></ul>
+          <div class="r-tot">
+            <div class="r-row"><span>Al día (promedio)</span><span id="t-day"></span></div>
+            <div class="r-row"><span>Al mes</span><span id="t-month"></span></div>
+            <div class="r-big"><span>AL AÑO</span><strong id="t-year">$0</strong></div>
+          </div>
+          <p class="r-foot">El poquito sí cuenta.<br><em>Hoy cuenta en tu contra.</em></p>
+        </div>
+        <svg class="receipt-ant" viewBox="0 0 230 200" aria-hidden="true"><use href="#ant"/></svg>
+      </div>
+
+      <section class="card save" aria-labelledby="save-h">
+        <h3 id="save-h">¿Y si guardas una parte?</h3>
+        <label for="pct">Guardo el <output id="pct-out" for="pct">50%</output> de mis gastos hormiga</label>
+        <input type="range" id="pct" min="10" max="100" step="10" value="50">
+        <p class="big-line">Tendrías <strong id="save-year">$0</strong> en un año.</p>
+        <div class="goal">
+          <div class="f"><label for="goal-name">Mi meta</label><input id="goal-name" type="text" maxlength="40"></div>
+          <div class="f"><label for="goal-amount">Cuesta</label><div class="money"><span>$</span><input id="goal-amount" type="text" inputmode="numeric" autocomplete="off"></div></div>
+        </div>
+        <p class="goal-out" id="goal-out" aria-live="polite"></p>
+      </section>
+
+      <section class="card share" aria-labelledby="share-h">
+        <h3 id="share-h">Compártelo</h3>
+        <p class="share-text" id="share-text"></p>
+        <div class="share-actions">
+          <button type="button" class="btn btn-ink" id="copy">Copiar texto</button>
+          <span class="status" id="copy-status" role="status" aria-live="polite"></span>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <div>
+      <p class="reto"><strong>Reto 30 días:</strong> separa $5.000 al día y en 30 días tienes $150.000. En un año serían $1.825.000.</p>
+      <p class="fine">Prototipo de la estrategia #ElPoquitoSíCuenta. Los gastos y precios de ejemplo son ilustrativos.</p>
+    </div>
+    <button type="button" class="link-btn" id="reset">Volver al ejemplo</button>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const KEY = 'poquito-calc-v1';
+  const UNITS = { semana: { perYear: 52, short: 'sem' }, mes: { perYear: 12, short: 'mes' } };
+  const EXAMPLE = [
+    { name: 'Tinto', price: 2000, count: 5, unit: 'semana' },
+    { name: 'Empanada', price: 3000, count: 3, unit: 'semana' },
+    { name: 'Gaseosa o mecato', price: 2500, count: 4, unit: 'semana' },
+    { name: 'Envío de domicilio', price: 5000, count: 1, unit: 'semana' },
+    { name: 'Carro por app', price: 18000, count: 2, unit: 'mes' }
+  ];
+  const CHIPS = [
+    ['Tinto', 2000, 5, 'semana'], ['Empanada', 3000, 3, 'semana'], ['Gaseosa', 2500, 3, 'semana'],
+    ['Mecato', 2500, 3, 'semana'], ['Domicilio', 5000, 1, 'semana'], ['Carro por app', 18000, 2, 'mes'],
+    ['Datos extra', 5000, 2, 'mes']
+  ];
+  const DEFAULT_GOAL = { goalName: 'Viaje con los parceros', goalAmount: 600000 };
+
+  const nf = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+  const fmt = n => '$' + nf.format(Math.round(n));
+  const digits = s => Number(String(s).replace(/[^\d]/g, '')) || 0;
+
+  let uid = 0;
+  function freshState(){
+    uid = 0;
+    return Object.assign({ rows: EXAMPLE.map(r => Object.assign({ id: uid++ }, r)), pct: 50, example: true }, DEFAULT_GOAL);
+  }
+  function load(){
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      const s = JSON.parse(raw);
+      if (!s || !Array.isArray(s.rows)) return null;
+      s.rows = s.rows.filter(r => r && typeof r === 'object').map(r => ({
+        id: Number(r.id) || 0, name: String(r.name || ''), price: Number(r.price) || 0,
+        count: Number(r.count) || 0, unit: r.unit === 'mes' ? 'mes' : 'semana'
+      }));
+      uid = s.rows.reduce((m, r) => Math.max(m, r.id + 1), 0);
+      s.pct = Math.min(100, Math.max(10, Number(s.pct) || 50));
+      s.goalName = typeof s.goalName === 'string' ? s.goalName : DEFAULT_GOAL.goalName;
+      s.goalAmount = Number(s.goalAmount) || 0;
+      s.example = !!s.example;
+      return s;
+    } catch (e) { return null; }
+  }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  let state = load() || freshState();
+  const $ = id => document.getElementById(id);
+  const rowsEl = $('rows'), linesEl = $('r-lines');
+
+  const yearly = r => Math.max(0, r.price) * Math.max(0, r.count) * UNITS[r.unit].perYear;
+
+  function markEdited(){
+    if (state.example){ state.example = false; $('example-badge').hidden = true; }
+  }
+
+  function field(cls, labelText, inputEl){
+    const wrap = document.createElement('div'); wrap.className = 'f ' + cls;
+    const lab = document.createElement('label'); lab.htmlFor = inputEl.id; lab.textContent = labelText;
+    wrap.append(lab, inputEl); return wrap;
+  }
+
+  function renderRows(){
+    rowsEl.textContent = '';
+    state.rows.forEach(r => {
+      const li = document.createElement('li'); li.className = 'row'; li.dataset.id = r.id;
+
+      const name = document.createElement('input');
+      name.id = 'name-' + r.id; name.type = 'text'; name.value = r.name; name.maxLength = 40; name.placeholder = 'Ej.: tinto';
+      name.addEventListener('input', () => { r.name = name.value; del.setAttribute('aria-label', 'Quitar ' + (r.name || 'gasto')); markEdited(); update(); });
+
+      const price = document.createElement('input');
+      price.id = 'price-' + r.id; price.type = 'text'; price.inputMode = 'numeric'; price.autocomplete = 'off';
+      price.value = r.price ? nf.format(r.price) : '';
+      price.addEventListener('input', () => { r.price = digits(price.value); markEdited(); update(); });
+      price.addEventListener('blur', () => { price.value = r.price ? nf.format(r.price) : ''; });
+      const money = document.createElement('div'); money.className = 'money';
+      const sign = document.createElement('span'); sign.textContent = '$'; sign.setAttribute('aria-hidden', 'true');
+      money.append(sign, price);
+      const priceWrap = document.createElement('div'); priceWrap.className = 'f price';
+      const pl = document.createElement('label'); pl.htmlFor = price.id; pl.textContent = 'Precio';
+      priceWrap.append(pl, money);
+
+      const count = document.createElement('input');
+      count.id = 'count-' + r.id; count.type = 'number'; count.min = '0'; count.max = '31'; count.step = '1'; count.inputMode = 'numeric';
+      count.value = r.count;
+      count.addEventListener('input', () => { r.count = Math.min(31, Math.max(0, Math.floor(Number(count.value) || 0))); markEdited(); update(); });
+
+      const unit = document.createElement('select'); unit.id = 'unit-' + r.id;
+      [['semana', 'semana'], ['mes', 'mes']].forEach(([v, t]) => {
+        const o = document.createElement('option'); o.value = v; o.textContent = t; if (r.unit === v) o.selected = true; unit.append(o);
+      });
+      unit.addEventListener('change', () => { r.unit = unit.value; markEdited(); update(); });
+
+      const sub = document.createElement('div'); sub.className = 'f sub';
+      const sl = document.createElement('span'); sl.className = 'sub-label'; sl.textContent = 'Al año';
+      const sv = document.createElement('span'); sv.className = 'sub-val'; sv.id = 'sub-' + r.id;
+      sub.append(sl, sv);
+
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '×';
+      del.setAttribute('aria-label', 'Quitar ' + (r.name || 'gasto'));
+      del.addEventListener('click', () => {
+        state.rows = state.rows.filter(x => x.id !== r.id); markEdited(); renderRows(); update();
+      });
+
+      li.append(field('name', 'Gasto', name), priceWrap, field('freq', 'Veces', count), field('unit', 'Cada', unit), sub, del);
+      rowsEl.append(li);
+    });
+  }
+
+  function addRow(name, price, count, unit){
+    const r = { id: uid++, name: name, price: price, count: count, unit: unit };
+    state.rows.push(r); markEdited(); renderRows(); update();
+    const el = $(name ? 'price-' + r.id : 'name-' + r.id); if (el) el.focus();
+  }
+
+  let lastYear = null;
+  function update(){
+    let year = 0;
+    linesEl.textContent = '';
+    state.rows.forEach(r => {
+      const y = yearly(r); year += y;
+      const sv = $('sub-' + r.id); if (sv) sv.textContent = fmt(y);
+      if (y > 0){
+        const li = document.createElement('li'); li.className = 'r-line';
+        const left = document.createElement('span'); left.className = 'r-name';
+        left.textContent = (r.name || 'Gasto') + ' ';
+        const q = document.createElement('span'); q.className = 'r-qty'; q.textContent = r.count + '×' + UNITS[r.unit].short;
+        left.append(q);
+        const amt = document.createElement('span'); amt.className = 'r-amt'; amt.textContent = fmt(y / 12);
+        li.append(left, amt); linesEl.append(li);
+      }
+    });
+    if (!linesEl.children.length){
+      const li = document.createElement('li'); li.className = 'r-empty'; li.textContent = 'Agrega un gasto para imprimir tu tirilla.'; linesEl.append(li);
+    }
+    const month = year / 12, day = year / 365;
+    $('t-day').textContent = fmt(day);
+    $('t-month').textContent = fmt(month);
+    const ty = $('t-year'); ty.textContent = fmt(year);
+    if (lastYear !== null && lastYear !== year){ ty.classList.remove('bump'); void ty.offsetWidth; ty.classList.add('bump'); }
+    lastYear = year;
+
+    const share = state.pct / 100;
+    $('pct-out').textContent = state.pct + '%';
+    $('save-year').textContent = fmt(year * share);
+    const goalOut = $('goal-out'); goalOut.textContent = '';
+    const monthlySave = month * share;
+    if (state.goalAmount > 0 && monthlySave > 0){
+      const months = Math.ceil(state.goalAmount / monthlySave);
+      const meta = state.goalName.trim() || 'tu meta';
+      goalOut.append('Con eso, ');
+      const b1 = document.createElement('strong'); b1.textContent = meta; goalOut.append(b1);
+      goalOut.append(' (' + fmt(state.goalAmount) + ') la logras en ');
+      const b2 = document.createElement('strong'); b2.textContent = months + (months === 1 ? ' mes' : ' meses'); goalOut.append(b2, '.');
+    } else if (state.goalAmount > 0){
+      goalOut.textContent = 'Agrega tus gastos hormiga para calcular cuándo llegas a tu meta.';
+    } else {
+      goalOut.textContent = 'Escribe cuánto cuesta tu meta y te decimos en cuántos meses llegas.';
+    }
+    $('share-text').textContent = 'Mis gastos hormiga me cuestan ' + fmt(year) + ' al año. ¿Y los tuyos? #ElPoquitoSíCuenta';
+    $('copy-status').textContent = '';
+    save();
+  }
+
+  // static wiring
+  CHIPS.forEach(([n, p, c, u]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = '+ ' + n;
+    b.addEventListener('click', () => addRow(n, p, c, u)); $('chips').append(b);
+  });
+  $('add-row').addEventListener('click', () => addRow('', 0, 1, 'semana'));
+
+  const pct = $('pct');
+  pct.addEventListener('input', () => { state.pct = Number(pct.value) || 50; update(); });
+  const gName = $('goal-name'), gAmt = $('goal-amount');
+  gName.addEventListener('input', () => { state.goalName = gName.value; update(); });
+  gAmt.addEventListener('input', () => { state.goalAmount = digits(gAmt.value); update(); });
+  gAmt.addEventListener('blur', () => { gAmt.value = state.goalAmount ? nf.format(state.goalAmount) : ''; });
+
+  $('copy').addEventListener('click', () => {
+    const text = $('share-text').textContent, status = $('copy-status');
+    const fallback = () => {
+      const range = document.createRange(); range.selectNodeContents($('share-text'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      status.textContent = 'Texto seleccionado: cópialo con Ctrl+C o mantén presionado.';
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => { status.textContent = 'Copiado'; }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  $('reset').addEventListener('click', () => {
+    state = freshState(); syncStatic(); renderRows(); lastYear = null; update();
+  });
+
+  function syncStatic(){
+    pct.value = state.pct;
+    gName.value = state.goalName;
+    gAmt.value = state.goalAmount ? nf.format(state.goalAmount) : '';
+    $('example-badge').hidden = !state.example;
+  }
+
+  try { $('r-date').textContent = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) {}
+  syncStatic(); renderRows(); update();
+})();
+</script>
+
+</body></html>
